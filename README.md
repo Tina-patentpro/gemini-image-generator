@@ -127,7 +127,7 @@ export OPENROUTER_API_KEY="your-openrouter-api-key"
 |-----------------|------------|-------------------|---------------|
 | mode | string | 工作模式: text_to_image, image_to_image, patent_drawing, product_prototype | 是 |
 | prompt | string | 图像生成提示词 | 是 |
-| size | string | 图像尺寸: 1024x1024, 1024x768, 768x1024, 832x1216, 1216s832 | 否 (默认: 1024x1024) |
+| size | string | 图像尺寸: 1024x1024, 1024x768, 768x1024, 832x1216, 1216x832 | 否 (默认: 1024x1024) |
 | n | integer | 生成数量 (1-4) | 否 (默认: 1) |
 | negative_prompt | string | 负面提示词 | 否 |
 | temperature | float | 创造性 (0.0-1.0) | 否 (默认: 0.7) |
@@ -306,7 +306,7 @@ MIT License
 
 ## 更新日志 (Changelog)
 
-### v1.0.0 (2025-01-26)
+### v1.0.0 (2026-01-26)
 - 初始版本发布
 - 支持四种生成模式
 - 完整的参数配置
