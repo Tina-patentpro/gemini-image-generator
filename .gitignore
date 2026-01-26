@@ -65,3 +65,16 @@ Thumbs.db
 # Project specific
 .worktrees/
 *.log
+
+# Dify CLI binaries
+dify-plugin-windows-amd64.exe
+dify-plugin-cli*.exe
+
+# Installation guides (not needed in repo)
+ICON_PLACEHOLDER.md
+INSTALL_DIFY_GUIDE.md
+INSTALL_GUIDE.md
+LOCAL_INSTALL_GUIDE.md
+PACKAGING_SOLUTION.md
+PLUGIN_README.md
+START_HERE.md

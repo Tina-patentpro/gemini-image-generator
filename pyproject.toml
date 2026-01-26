@@ -1,0 +1,14 @@
+[project]
+name = "gemini_image_generator"
+version = "1.0.0"
+description = "A powerful image generation plugin using Google's Gemini 2.0 Flash model via OpenRouter API"
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    "dify_plugin>=0.3.0,<0.5.0",
+    "requests>=2.31.0",
+]
+
+[dependency-groups]
+dev = []
