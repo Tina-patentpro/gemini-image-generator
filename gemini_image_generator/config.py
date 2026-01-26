@@ -2,12 +2,17 @@
 
 # OpenRouter API配置
 OPENROUTER_API_BASE = "https://openrouter.ai/api/v1/chat/completions"
+MODEL_ID = "google/gemini-2.0-flash-exp-image-generation"
 MODEL_NAME = "google/gemini-2.0-flash-exp-image-generation"
 API_TIMEOUT = 30  # 秒
 MAX_RETRIES = 3
 
 # 环境变量名
 API_KEY_ENV = "OPENROUTER_API_KEY"
+
+# 默认值
+DEFAULT_SIZE = "1024x1024"
+DEFAULT_EDIT = "modify"
 
 # 支持的图像尺寸
 SUPPORTED_SIZES = [
@@ -26,12 +31,12 @@ MODES = {
     "product_prototype": "产品原型图"
 }
 
-# 图生图编辑类型
+# 图生图编辑类型（关键词用于自动检测）
 EDIT_TYPES = {
-    "modify": "图像修改/编辑",
-    "style_transfer": "风格迁移",
-    "sketch_render": "草图渲染",
-    "outpainting": "图像外扩"
+    "modify": ["edit", "modify", "change", "adjust", "fix", "修改", "编辑", "调整"],
+    "style_transfer": ["style", "transfer", "风格", "迁移"],
+    "sketch_render": ["sketch", "render", "草绘", "渲染"],
+    "outpainting": ["outpaint", "extend", "expand", "外扩", "扩展"]
 }
 
 # 线条风格
