@@ -2,219 +2,105 @@
 
 这是Dify工作流的核心工具类，整合了API客户端、模板管理和参数验证。
 """
-import os
-import requests
-from typing import Dict, Any, Optional
+from typing import Generator, Any
+from dify_plugin import Tool
+from dify_plugin.interfaces.tool import ToolInvokeMessage
+
 from .api_client import OpenRouterAPIClient
 from .templates import get_template_manager
-from .utils import (
-    get_api_key,
-    validate_size,
-    validate_num_images,
-    validate_mode,
-    format_error
-)
+from .utils import validate_size, validate_num_images, validate_mode
 
 
-class GeminiImageGenerator:
+class GeminiImageGenerator(Tool):
     """Gemini图像生成工具类
 
     提供文生图、图生图、专利附图和产品原型图生成功能。
     """
 
-    def __init__(self):
-        """初始化工具实例"""
-        self.api_key = self._load_api_key()
-        self.api_client = None
-        self.template_manager = get_template_manager()
-
-        # 如果有API密钥，创建API客户端
-        if self.api_key:
-            self.api_client = OpenRouterAPIClient(
-                api_key=self.api_key,
-                api_base="https://openrouter.ai/api/v1",
-                timeout=30,
-                max_retries=3
-            )
-
-    def _load_api_key(self) -> Optional[str]:
-        """从环境变量加载API密钥
-
-        Returns:
-            API密钥字符串，如果未配置返回None
-        """
-        return get_api_key()
-
-    def _validate_parameters(self, params: Dict[str, Any]) -> bool:
-        """验证输入参数
-
-        Args:
-            params: 参数字典
-
-        Returns:
-            验证是否通过
-        """
-        # 验证mode
-        mode = params.get("mode")
-        if not mode or not validate_mode(mode):
-            return False
-
-        # 验证prompt
-        prompt = params.get("prompt")
-        if not prompt or not isinstance(prompt, str):
-            return False
-
-        # 验证size（必须显式提供）
-        if "size" not in params:
-            return False
-        size = params["size"]
-        if not validate_size(size):
-            return False
-
-        # 验证num_images（必须显式提供）
-        if "num_images" not in params:
-            return False
-        num_images = params["num_images"]
-        if not validate_num_images(num_images):
-            return False
-
-        # 图生图模式需要reference_image_url
-        if mode == "image_to_image":
-            reference_image_url = params.get("reference_image_url")
-            if not reference_image_url:
-                return False
-
-        return True
-
-    def _apply_template_if_needed(
-        self,
-        mode: str,
-        prompt: str,
-        params: Dict[str, Any]
-    ) -> tuple[str, Dict[str, Any]]:
-        """根据模式应用模板
-
-        Args:
-            mode: 工作模式
-            prompt: 原始提示词
-            params: 参数字典
-
-        Returns:
-            应用模板后的提示词和参数字典
-        """
-        template_id = params.get("preset_template")
-
-        if not template_id:
-            return prompt, params
-
-        # 根据模式获取模板
-        if mode == "patent_drawing":
-            template = self.template_manager.get_patent_template(template_id)
-        elif mode == "product_prototype":
-            template = self.template_manager.get_product_template(template_id)
-        else:
-            return prompt, params
-
-        # Validate template was found
-        if template is None:
-            # Invalid template_id - log warning but continue with original prompt
-            import warnings
-            warnings.warn(f"Template '{template_id}' not found for mode '{mode}', using original prompt")
-            return prompt, params
-
-        # Apply the template
-        enhanced_prompt = self.template_manager.apply_template(template, prompt)
-        return enhanced_prompt, params
-
-    def _format_result(self, api_response: Dict[str, Any]) -> Dict[str, Any]:
-        """格式化API响应为Dify兼容格式
-
-        Args:
-            api_response: API响应
-
-        Returns:
-            Dify格式结果
-        """
-        if not api_response.get("success"):
-            # API调用失败
-            return {
-                "success": False,
-                "error": api_response.get("error", "未知错误")
-            }
-
-        # API调用成功
-        images = api_response.get("images", [])
-
-        # 格式化图像列表
-        formatted_images = []
-        for img_url in images:
-            formatted_images.append({
-                "url": img_url
-            })
-
-        return {
-            "success": True,
-            "images": formatted_images,
-            "count": len(formatted_images)
-        }
-
-    def invoke(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _invoke(self, tool_parameters: dict[str, Any]) -> Generator[ToolInvokeMessage, None, None]:
         """工具调用入口点（Dify工作流调用）
 
         Args:
-            params: 参数字典，包含：
+            tool_parameters: 参数字典，包含：
                 - mode: 工作模式（text_to_image/image_to_image/patent_drawing/product_prototype）
                 - prompt: 提示词
                 - size: 图像尺寸（默认1024x1024）
                 - num_images: 生成数量（默认1）
                 - reference_image_url: 参考图像URL（图生图模式需要）
-                - template_id: 模板ID（专利/产品模式需要）
+                - preset_template: 预设模板ID（专利/产品模式）
 
-        Returns:
-            结果字典，包含：
-                - success: 是否成功
-                - images: 图像列表（成功时）
-                - count: 图像数量（成功时）
-                - error: 错误信息（失败时）
+        Yields:
+            ToolInvokeMessage: 执行结果消息
+
+        Raises:
+            ValueError: 参数验证失败
+            Exception: API 调用失败
         """
-        # 检查API密钥
-        if not self.api_key or not self.api_client:
-            return {
-                "success": False,
-                "error": format_error(
-                    "auth_error",
-                    "API密钥未配置，请设置OPENROUTER_API_KEY环境变量",
-                    retry_possible=False
-                )
-            }
+        # 1. 获取并验证凭证
+        credentials = self.runtime.credentials
+        api_key = credentials.get("openrouter_api_key")
+        if not api_key:
+            raise ValueError("OpenRouter API Key is required. Please configure it in the plugin settings.")
 
-        # 验证参数
-        if not self._validate_parameters(params):
-            return {
-                "success": False,
-                "error": format_error(
-                    "validation_error",
-                    "参数验证失败，请检查输入参数",
-                    retry_possible=False
-                )
-            }
+        # 2. 验证基本参数
+        mode = tool_parameters.get("mode")
+        if not mode or not validate_mode(mode):
+            raise ValueError(f"Invalid mode: {mode}. Must be one of: text_to_image, image_to_image, patent_drawing, product_prototype")
 
-        # 提取参数
-        mode = params["mode"]
-        prompt = params["prompt"]
-        size = params.get("size", "1024x1024")
-        num_images = params.get("num_images", 1)
-        reference_image_url = params.get("reference_image_url")
+        prompt = tool_parameters.get("prompt")
+        if not prompt or not isinstance(prompt, str):
+            raise ValueError("Prompt is required and must be a string")
 
-        # 应用模板（如果需要）
-        enhanced_prompt, params = self._apply_template_if_needed(mode, prompt, params)
+        size = tool_parameters.get("size", "1024x1024")
+        if not validate_size(size):
+            raise ValueError(f"Invalid size: {size}. Supported sizes: 1024x1024, 1024x768, 768x1024, 832x1216, 1216x832")
 
-        # 映射模式到API调用参数
+        num_images = tool_parameters.get("num_images", 1)
+        if not validate_num_images(num_images):
+            raise ValueError(f"Invalid num_images: {num_images}. Must be between 1 and 4")
+
+        # 3. 图生图模式需要参考图像
+        reference_image_url = tool_parameters.get("reference_image_url")
+        if mode == "image_to_image" and not reference_image_url:
+            raise ValueError("reference_image_url is required for image_to_image mode")
+
+        # 4. 应用模板（如果需要）
+        template_id = tool_parameters.get("preset_template")
+        enhanced_prompt = prompt
+
+        if template_id:
+            template_manager = get_template_manager()
+
+            if mode == "patent_drawing":
+                template = template_manager.get_patent_template(template_id)
+                if template:
+                    enhanced_prompt = template_manager.apply_template(template, prompt)
+                else:
+                    import warnings
+                    warnings.warn(f"Template '{template_id}' not found for patent_drawing mode, using original prompt")
+
+            elif mode == "product_prototype":
+                template = template_manager.get_product_template(template_id)
+                if template:
+                    enhanced_prompt = template_manager.apply_template(template, prompt)
+                else:
+                    import warnings
+                    warnings.warn(f"Template '{template_id}' not found for product_prototype mode, using original prompt")
+
+        # 5. 创建 API 客户端
+        api_client = OpenRouterAPIClient(
+            api_key=api_key,
+            api_base="https://openrouter.ai/api/v1",
+            timeout=30,
+            max_retries=3
+        )
+
+        # 6. 映射模式到API调用参数
         api_mode = "text_to_image" if mode in ["text_to_image", "patent_drawing", "product_prototype"] else "image_to_image"
 
-        # 调用API生成图像
+        # 7. 调用 API 生成图像
         try:
-            api_response = self.api_client.generate_image(
+            api_response = api_client.generate_image(
                 prompt=enhanced_prompt,
                 size=size,
                 mode=api_mode,
@@ -222,17 +108,31 @@ class GeminiImageGenerator:
                 num_images=num_images
             )
 
-            # 格式化并返回结果
-            return self._format_result(api_response)
+            # 8. 检查 API 响应
+            if not api_response["success"]:
+                error_msg = api_response.get("error", {})
+                if isinstance(error_msg, dict):
+                    error_message = error_msg.get("message", "Unknown API error")
+                else:
+                    error_message = str(error_msg)
 
-        except (requests.exceptions.RequestException, OSError) as e:
-            # Network or I/O error
-            return {
-                "success": False,
-                "images": [],
-                "error": format_error(
-                    "network_error",
-                    f"网络请求错误: {str(e)}",
-                    retry_possible=True
-                )
-            }
+                raise Exception(f"Image generation failed: {error_message}")
+
+            # 9. 成功 - 返回结果
+            images = api_response.get("images", [])
+            formatted_images = [{"url": url} for url in images]
+
+            yield self.create_json_message({
+                "success": True,
+                "images": formatted_images,
+                "count": len(formatted_images)
+            })
+
+        except Exception as e:
+            # 重新抛出已知的异常
+            if "timeout" in str(e).lower():
+                raise Exception("API request timeout. Please try again.")
+            elif "network" in str(e).lower() or "connection" in str(e).lower():
+                raise Exception(f"Network error: {str(e)}")
+            else:
+                raise

@@ -2,7 +2,7 @@
 import time
 import re
 import json
-import httpx
+import requests
 from typing import Optional, Dict, Any, List
 from .utils import format_error
 
@@ -184,7 +184,7 @@ class OpenRouterAPIClient:
         last_error = None
         for attempt in range(self.max_retries):
             try:
-                response = httpx.post(
+                response = requests.post(
                     url,
                     json=payload,
                     headers=headers,
@@ -214,7 +214,7 @@ class OpenRouterAPIClient:
                     "count": len(images[:num_images])
                 }
 
-            except httpx.TimeoutException as e:
+            except requests.exceptions.Timeout as e:
                 last_error = e
                 # 超时重试
                 if attempt < self.max_retries - 1:
@@ -230,11 +230,11 @@ class OpenRouterAPIClient:
                         )
                     }
 
-            except httpx.HTTPStatusError as e:
+            except requests.exceptions.HTTPError as e:
                 # HTTP错误不重试
                 error_msg = str(e)
                 try:
-                    error_detail = e.response.json()
+                    error_detail = response.json()
                     if "error" in error_detail:
                         error_msg = error_detail["error"].get("message", error_msg)
                 except (json.JSONDecodeError, ValueError):
@@ -249,7 +249,7 @@ class OpenRouterAPIClient:
                     )
                 }
 
-            except httpx.RequestException as e:
+            except requests.exceptions.RequestException as e:
                 last_error = e
                 # 网络错误重试
                 if attempt < self.max_retries - 1:
