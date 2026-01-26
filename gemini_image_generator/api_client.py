@@ -1,6 +1,7 @@
 """OpenRouter API客户端"""
 import time
 import re
+import json
 import requests
 from typing import Optional, Dict, Any, List
 from .utils import format_error
@@ -236,7 +237,7 @@ class OpenRouterAPIClient:
                     error_detail = response.json()
                     if "error" in error_detail:
                         error_msg = error_detail["error"].get("message", error_msg)
-                except:
+                except (json.JSONDecodeError, ValueError):
                     pass
 
                 return {
