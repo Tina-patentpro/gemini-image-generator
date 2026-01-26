@@ -1,6 +1,5 @@
 """Dify Gemini图像生成插件"""
 __version__ = "1.0.0"
 
-from .gemini_image_tool import GeminiImageGenerator
-
+# GeminiImageGenerator will be implemented in Task 4
 __all__ = ["GeminiImageGenerator"]
