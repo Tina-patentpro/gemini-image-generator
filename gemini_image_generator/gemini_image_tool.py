@@ -3,6 +3,7 @@
 这是Dify工作流的核心工具类，整合了API客户端、模板管理和参数验证。
 """
 import os
+import requests
 from typing import Dict, Any, Optional
 from .api_client import OpenRouterAPIClient
 from .templates import get_template_manager
@@ -90,7 +91,7 @@ class GeminiImageGenerator:
         mode: str,
         prompt: str,
         params: Dict[str, Any]
-    ) -> str:
+    ) -> tuple[str, Dict[str, Any]]:
         """根据模式应用模板
 
         Args:
@@ -99,24 +100,31 @@ class GeminiImageGenerator:
             params: 参数字典
 
         Returns:
-            应用模板后的提示词
+            应用模板后的提示词和参数字典
         """
-        # 专利附图模式
+        template_id = params.get("preset_template")
+
+        if not template_id:
+            return prompt, params
+
+        # 根据模式获取模板
         if mode == "patent_drawing":
-            template_id = params.get("template_id", "explosion")
             template = self.template_manager.get_patent_template(template_id)
-            if template:
-                return self.template_manager.apply_template(template, prompt)
-
-        # 产品原型图模式
         elif mode == "product_prototype":
-            template_id = params.get("template_id", "concept")
             template = self.template_manager.get_product_template(template_id)
-            if template:
-                return self.template_manager.apply_template(template, prompt)
+        else:
+            return prompt, params
 
-        # 其他模式不应用模板
-        return prompt
+        # Validate template was found
+        if template is None:
+            # Invalid template_id - log warning but continue with original prompt
+            import warnings
+            warnings.warn(f"Template '{template_id}' not found for mode '{mode}', using original prompt")
+            return prompt, params
+
+        # Apply the template
+        enhanced_prompt = self.template_manager.apply_template(template, prompt)
+        return enhanced_prompt, params
 
     def _format_result(self, api_response: Dict[str, Any]) -> Dict[str, Any]:
         """格式化API响应为Dify兼容格式
@@ -199,7 +207,7 @@ class GeminiImageGenerator:
         reference_image_url = params.get("reference_image_url")
 
         # 应用模板（如果需要）
-        enhanced_prompt = self._apply_template_if_needed(mode, prompt, params)
+        enhanced_prompt, params = self._apply_template_if_needed(mode, prompt, params)
 
         # 映射模式到API调用参数
         api_mode = "text_to_image" if mode in ["text_to_image", "patent_drawing", "product_prototype"] else "image_to_image"
@@ -217,13 +225,14 @@ class GeminiImageGenerator:
             # 格式化并返回结果
             return self._format_result(api_response)
 
-        except Exception as e:
-            # 异常处理
+        except (requests.exceptions.RequestException, OSError) as e:
+            # Network or I/O error
             return {
                 "success": False,
+                "images": [],
                 "error": format_error(
-                    "unknown_error",
-                    f"图像生成失败: {str(e)}",
+                    "network_error",
+                    f"网络请求错误: {str(e)}",
                     retry_possible=True
                 )
             }
