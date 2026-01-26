@@ -1,0 +1,32 @@
+version: "0.1.0"
+author: Dify
+name: gemini_image_generator
+label:
+  en_US: Gemini Image Generator
+  zh_Hans: Gemini图像生成器
+description:
+  en_US: |
+    A powerful image generation plugin using Google's Gemini 2.0 Flash model via OpenRouter API.
+    Supports multiple modes including text-to-image, image-to-image, patent drawings, and product prototypes.
+  zh_Hans: |
+    基于Google Gemini 2.0 Flash模型的强大图像生成插件，通过OpenRouter API调用。
+    支持多种模式，包括文生图、图生图、专利附图和产品原型图。
+tags:
+  - image
+  - generation
+  - gemini
+  - ai
+icon: cover.png
+resource:
+  memory: 268435456
+  permission:
+    model:
+      enabled: true
+      llm: true
+tools:
+  - definitions/gemini_image_generator.yaml
+metadata:
+  version: 1.0.0
+  license: MIT
+  homepage: https://github.com/yourusername/dify-gemini-image-plugin
+  repository: https://github.com/yourusername/dify-gemini-image-plugin
