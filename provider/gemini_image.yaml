@@ -31,7 +31,7 @@ credentials_for_provider:
 
 extra:
   python:
-    source: provider/gemini_image_generator/provider.py
+    source: provider/gemini_image_provider.py
 
 tools:
   - tools/gemini_generate_image.yaml

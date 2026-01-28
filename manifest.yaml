@@ -25,7 +25,8 @@ meta:
     language: python
     version: '3.12'
     entrypoint: main
-tools:
+plugins:
+  tools:
   - provider/gemini_image.yaml
 resource:
   memory: 268435456

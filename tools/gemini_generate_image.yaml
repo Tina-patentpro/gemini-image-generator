@@ -290,3 +290,7 @@ outputs:
     description:
       en_US: Error information if failed
       zh_Hans: 失败时的错误信息
+
+extra:
+  python:
+    source: tools/gemini_generate_image.py
