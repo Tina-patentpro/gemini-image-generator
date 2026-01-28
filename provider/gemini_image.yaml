@@ -11,7 +11,7 @@ identity:
     zh_Hans: |
       使用Google Gemini 2.0 Flash模型通过OpenRouter API生成图像。
       支持文生图、图生图、专利附图和产品原型图。
-  icon: icon.png
+  icon: ../icon.png
   tags:
     - image
     - productivity

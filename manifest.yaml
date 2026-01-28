@@ -14,10 +14,10 @@ description:
     支持多种模式，包括文生图、图生图、专利附图和产品原型图。
 tags:
   - productivity
-icon: _assets/icon.png
+icon: icon.png
 type: plugin
 meta:
-  version: 0.0.1
+  version: 1.0.0
   arch:
   - amd64
   - arm64
