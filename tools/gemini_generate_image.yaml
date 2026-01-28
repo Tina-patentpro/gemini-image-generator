@@ -1,0 +1,292 @@
+identity:
+  name: gemini_generate_image
+  label:
+    en_US: Generate Image with Gemini
+    zh_Hans: 使用Gemini生成图像
+  description:
+    en_US: Generate images from text descriptions or modify existing images
+    zh_Hans: 根据文本描述生成图像或修改现有图像
+  allow_registration: true
+
+parameters:
+  - name: mode
+    type: select
+    required: true
+    label:
+      en_US: Generation Mode
+      zh_Hans: 生成模式
+    human_description:
+      en_US: Select the image generation mode
+      zh_Hans: 选择图像生成模式
+    form: llm
+    options:
+      - value: text_to_image
+        label:
+          en_US: Text to Image
+          zh_Hans: 文生图
+      - value: image_to_image
+        label:
+          en_US: Image to Image
+          zh_Hans: 图生图/文改图
+      - value: patent_drawing
+        label:
+          en_US: Patent Drawing
+          zh_Hans: 专利附图
+      - value: product_prototype
+        label:
+          en_US: Product Prototype
+          zh_Hans: 产品原型图
+    default: text_to_image
+
+  - name: prompt
+    type: string
+    required: true
+    label:
+      en_US: Prompt
+      zh_Hans: 提示词
+    human_description:
+      en_US: Text description of the image you want to generate
+      zh_Hans: 想要生成的图像的文本描述
+    form: llm
+    max_length: 5000
+
+  - name: negative_prompt
+    type: string
+    required: false
+    label:
+      en_US: Negative Prompt
+      zh_Hans: 负面提示词
+    human_description:
+      en_US: Things you don't want in the generated image
+      zh_Hans: 不希望在生成图像中出现的内容
+    form: llm
+    max_length: 1000
+
+  - name: reference_image_url
+    type: string
+    required: false
+    label:
+      en_US: Reference Image URL
+      zh_Hans: 参考图像URL
+    human_description:
+      en_US: URL of reference image for image-to-image mode
+      zh_Hans: 图生图模式的参考图像URL
+    form: llm
+
+  - name: edit_type
+    type: select
+    required: false
+    label:
+      en_US: Edit Type
+      zh_Hans: 编辑类型
+    human_description:
+      en_US: Type of image editing
+      zh_Hans: 图像编辑类型
+    form: form
+    options:
+      - value: modify
+        label:
+          en_US: Modify/Edit
+          zh_Hans: 修改/编辑
+      - value: style_transfer
+        label:
+          en_US: Style Transfer
+          zh_Hans: 风格迁移
+      - value: sketch_render
+        label:
+          en_US: Sketch Render
+          zh_Hans: 草图渲染
+      - value: outpainting
+        label:
+          en_US: Outpainting
+          zh_Hans: 图像外扩
+
+  - name: preset_template
+    type: select
+    required: false
+    label:
+      en_US: Preset Template
+      zh_Hans: 预设模板
+    human_description:
+      en_US: Use a predefined prompt template
+      zh_Hans: 使用预定义的提示词模板
+    form: form
+    options:
+      - value: explosion
+        label:
+          en_US: Explosion View
+          zh_Hans: 爆炸图
+      - value: assembly
+        label:
+          en_US: Assembly View
+          zh_Hans: 装配图
+      - value: detail
+        label:
+          en_US: Detail View
+          zh_Hans: 零件细节图
+      - value: section
+        label:
+          en_US: Section View
+          zh_Hans: 剖面图
+      - value: principle
+        label:
+          en_US: Principle Diagram
+          zh_Hans: 原理图
+      - value: circuit
+        label:
+          en_US: Circuit Diagram
+          zh_Hans: 电路/管路图
+      - value: concept
+        label:
+          en_US: Concept Render
+          zh_Hans: 概念渲染图
+      - value: ui
+        label:
+          en_US: UI Design
+          zh_Hans: 用户界面图
+      - value: scene
+        label:
+          en_US: Usage Scene
+          zh_Hans: 场景使用图
+      - value: function
+        label:
+          en_US: Function Diagram
+          zh_Hans: 功能示意图
+      - value: packaging
+        label:
+          en_US: Packaging Design
+          zh_Hans: 包装设计图
+
+  - name: line_style
+    type: select
+    required: false
+    label:
+      en_US: Line Style
+      zh_Hans: 线条风格
+    human_description:
+      en_US: Drawing line style
+      zh_Hans: 绘图线条风格
+    form: form
+    options:
+      - value: technical
+        label:
+          en_US: Technical Drawing
+          zh_Hans: 技术绘图
+      - value: sketch
+        label:
+          en_US: Sketch
+          zh_Hans: 草图
+      - value: render
+        label:
+          en_US: Render
+          zh_Hans: 渲染图
+
+  - name: view_angle
+    type: select
+    required: false
+    label:
+      en_US: View Angle
+      zh_Hans: 视角
+    human_description:
+      en_US: Viewing angle
+      zh_Hans: 观察视角
+    form: form
+    options:
+      - value: front
+        label:
+          en_US: Front View
+          zh_Hans: 正视图
+      - value: top
+        label:
+          en_US: Top View
+          zh_Hans: 俯视图
+      - value: side
+        label:
+          en_US: Side View
+          zh_Hans: 侧视图
+      - value: isometric
+        label:
+          en_US: Isometric View
+          zh_Hans: 等轴测图
+
+  - name: size
+    type: select
+    required: false
+    label:
+      en_US: Image Size
+      zh_Hans: 图像尺寸
+    human_description:
+      en_US: Output image dimensions
+      zh_Hans: 输出图像尺寸
+    form: form
+    default: "1024x1024"
+    options:
+      - value: "1024x1024"
+        label:
+          en_US: "1024x1024"
+          zh_Hans: "1024x1024"
+      - value: "1024x768"
+        label:
+          en_US: "1024x768"
+          zh_Hans: "1024x768"
+      - value: "768x1024"
+        label:
+          en_US: "768x1024"
+          zh_Hans: "768x1024"
+      - value: "832x1216"
+        label:
+          en_US: "832x1216"
+          zh_Hans: "832x1216"
+      - value: "1216x832"
+        label:
+          en_US: "1216x832"
+          zh_Hans: "1216x832"
+
+  - name: num_images
+    type: number
+    required: false
+    label:
+      en_US: Number of Images
+      zh_Hans: 生成数量
+    human_description:
+      en_US: Number of images to generate (1-4)
+      zh_Hans: 生成图像的数量（1-4）
+    form: form
+    default: 1
+    min: 1
+    max: 4
+
+  - name: seed
+    type: number
+    required: false
+    label:
+      en_US: Random Seed
+      zh_Hans: 随机种子
+    human_description:
+      en_US: Seed for reproducible results
+      zh_Hans: 用于可重复结果的随机种子
+    form: form
+    default: 42
+
+outputs:
+  - name: success
+    type: boolean
+    label:
+      en_US: Success
+      zh_Hans: 是否成功
+  - name: images
+    type: array[object]
+    label:
+      en_US: Generated Images
+      zh_Hans: 生成的图像
+    description:
+      en_US: List of generated image URLs
+      zh_Hans: 生成的图像URL列表
+  - name: error
+    type: object
+    label:
+      en_US: Error
+      zh_Hans: 错误信息
+    description:
+      en_US: Error information if failed
+      zh_Hans: 失败时的错误信息
